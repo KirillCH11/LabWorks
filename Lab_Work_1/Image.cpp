@@ -3,6 +3,8 @@
 */
 
 #include "Image.h"
+#include <cstdint>
+#include <cmath>
 
 Image_BMP::Image_BMP(const std::string& file_name) 
 {
@@ -121,9 +123,9 @@ void Image_BMP::Gauss_filter()
                 }
             }
             const int new_idx = y_offset + x;
-            lst_new[new_idx].red = static_cast<uint8_t>(r < 0 ? 0 : (r > 255 ? 255 : r));
-            lst_new[new_idx].green = static_cast<uint8_t>(g < 0 ? 0 : (g > 255 ? 255 : g));
-            lst_new[new_idx].blue = static_cast<uint8_t>(b < 0 ? 0 : (b > 255 ? 255 : b));
+            lst_new[new_idx].red   = static_cast<unsigned char>(std::min(std::max(r, 0.0f), 255.0f));
+            lst_new[new_idx].green = static_cast<unsigned char>(std::min(std::max(g, 0.0f), 255.0f));
+            lst_new[new_idx].blue  = static_cast<unsigned char>(std::min(std::max(b, 0.0f), 255.0f));
         }
     }
 
@@ -162,9 +164,9 @@ void Image_BMP::Gauss_filter_parallel()
                 }
             }
             const int new_idx = y_offset + x;
-            lst_new[new_idx].red = static_cast<uint8_t>(r < 0 ? 0 : (r > 255 ? 255 : r));
-            lst_new[new_idx].green = static_cast<uint8_t>(g < 0 ? 0 : (g > 255 ? 255 : g));
-            lst_new[new_idx].blue = static_cast<uint8_t>(b < 0 ? 0 : (b > 255 ? 255 : b));
+            lst_new[new_idx].red   = static_cast<unsigned char>(std::min(std::max(r, 0.0f), 255.0f));
+            lst_new[new_idx].green = static_cast<unsigned char>(std::min(std::max(g, 0.0f), 255.0f));
+            lst_new[new_idx].blue  = static_cast<unsigned char>(std::min(std::max(b, 0.0f), 255.0f));
         }
     }
 

@@ -5,11 +5,13 @@
 #ifndef IMAGE_H
 #define IMAGE_H
 
+#include <cstdint>
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <iomanip>
 #include <omp.h>
+#include <algorithm> 
 
 #pragma pack(push,1)
 
