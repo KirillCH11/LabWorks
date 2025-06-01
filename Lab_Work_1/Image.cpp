@@ -43,16 +43,20 @@ void Image_BMP::save(const std::string& filename)
 void Image_BMP::rotate_clockwise() 
 {
     std::vector<Pixel> lst_new(info_header.width * info_header.height);
-    int new_width = info_header.height;
-    int new_height = info_header.width;
-
-    for (int y = 0; y < info_header.height; ++y) 
+    const int new_width = info_header.height;
+    const int new_height = info_header.width;
+    const int height = info_header.height;
+    const int width = info_header.width;
+    
+    #pragma omp parallel for schedule(static)
+    for (int y = 0; y < height; ++y) 
     {
-        for (int x = 0; x < info_header.width; ++x) 
+        const int new_x = y;
+        const int src_y_offset = y * width;
+        for (int x = 0; x < width; ++x) 
         {
-            int new_x = y;
-            int new_y = new_width - 1 - x;
-            lst_new[new_y * new_height + new_x] = lst[y * info_header.width + x];
+            const int new_y = new_width - 1 - x;
+            lst_new[new_y * new_height + new_x] = lst[src_y_offset + x];
         }
     }
 
@@ -64,16 +68,20 @@ void Image_BMP::rotate_clockwise()
 void Image_BMP::rotate_counter_clockwise() 
 {
     std::vector<Pixel> lst_new(info_header.width * info_header.height);
-    int new_width = info_header.height;
-    int new_height = info_header.width;
+    const int new_width = info_header.height;
+    const int new_height = info_header.width;
+    const int height = info_header.height;
+    const int width = info_header.width;
 
-    for (int y = 0; y < info_header.height; ++y) 
+    #pragma omp parallel for schedule(static)
+    for (int y = 0; y < height; ++y) 
     {
-        for (int x = 0; x < info_header.width; ++x) 
+        const int new_y = y;
+        const int src_y_offset = y * width;
+        for (int x = 0; x < width; ++x) 
         {
-            int new_x = new_height - 1 - y;
-            int new_y = x;
-            lst_new[new_y * new_height + new_x] = lst[y * info_header.width + x];
+            const int new_x = new_height - 1 - y;
+            lst_new[new_y * new_height + new_x] = lst[src_y_offset + x];
         }
     }
     
@@ -82,37 +90,81 @@ void Image_BMP::rotate_counter_clockwise()
     info_header.height = new_height;
 }
 
-
 void Image_BMP::Gauss_filter() 
 {
-    const float yadr[3][3] = {
+    const float kernel[3][3] = {
         {1/16.0f, 2/16.0f, 1/16.0f},
         {2/16.0f, 4/16.0f, 2/16.0f},
         {1/16.0f, 2/16.0f, 1/16.0f}
     };
 
     std::vector<Pixel> lst_new(lst.size());
+    const int height = info_header.height;
+    const int width = info_header.width;
 
-    for (int y = 1; y < info_header.height - 1; ++y) 
+    for (int y = 1; y < height - 1; ++y) 
     {
-        for (int x = 1; x < info_header.width - 1; ++x) 
+        const int y_offset = y * width;
+        for (int x = 1; x < width - 1; ++x) 
         {
             float r = 0, g = 0, b = 0;
             for (int ky = -1; ky <= 1; ++ky) 
             {
+                const int ky_offset = (y + ky) * width;
                 for (int kx = -1; kx <= 1; ++kx) 
                 {
-                    int pix_ind = ((y + ky) * info_header.width + (x + kx));
-                    r += lst[pix_ind].red * yadr[ky + 1][kx + 1];
-                    g += lst[pix_ind].green * yadr[ky + 1][kx + 1];
-                    b += lst[pix_ind].blue * yadr[ky + 1][kx + 1];
+                    const int idx = ky_offset + (x + kx);
+                    const float k = kernel[ky + 1][kx + 1];
+                    r += lst[idx].red * k;
+                    g += lst[idx].green * k;
+                    b += lst[idx].blue * k;
                 }
             }
+            const int new_idx = y_offset + x;
+            lst_new[new_idx].red = static_cast<uint8_t>(r < 0 ? 0 : (r > 255 ? 255 : r));
+            lst_new[new_idx].green = static_cast<uint8_t>(g < 0 ? 0 : (g > 255 ? 255 : g));
+            lst_new[new_idx].blue = static_cast<uint8_t>(b < 0 ? 0 : (b > 255 ? 255 : b));
+        }
+    }
 
-            int new_pix_ind = (y * info_header.width + x);
-            lst_new[new_pix_ind].red = std::min(std::max(static_cast<int>(r), 0), 255);
-            lst_new[new_pix_ind].green = std::min(std::max(static_cast<int>(g), 0), 255);
-            lst_new[new_pix_ind].blue = std::min(std::max(static_cast<int>(b), 0), 255);
+    lst = std::move(lst_new);
+}
+
+void Image_BMP::Gauss_filter_parallel() 
+{
+    const float kernel[3][3] = {
+        {1/16.0f, 2/16.0f, 1/16.0f},
+        {2/16.0f, 4/16.0f, 2/16.0f},
+        {1/16.0f, 2/16.0f, 1/16.0f}
+    };
+
+    std::vector<Pixel> lst_new(lst.size());
+    const int height = info_header.height;
+    const int width = info_header.width;
+
+    #pragma omp parallel for schedule(dynamic, 16)
+    for (int y = 1; y < height - 1; ++y) 
+    {
+        const int y_offset = y * width;
+        for (int x = 1; x < width - 1; ++x) 
+        {
+            float r = 0, g = 0, b = 0;
+            for (int ky = -1; ky <= 1; ++ky) 
+            {
+                const int ky_offset = (y + ky) * width;
+                for (int kx = -1; kx <= 1; ++kx) 
+                {
+                    const int idx = ky_offset + (x + kx);
+                    const float k = kernel[ky + 1][kx + 1];
+                    r += lst[idx].red * k;
+                    g += lst[idx].green * k;
+                    b += lst[idx].blue * k;
+                }
+            }
+            const int new_idx = y_offset + x;
+            lst_new[new_idx].red = static_cast<uint8_t>(r < 0 ? 0 : (r > 255 ? 255 : r));
+            lst_new[new_idx].green = static_cast<uint8_t>(g < 0 ? 0 : (g > 255 ? 255 : g));
+            lst_new[new_idx].blue = static_cast<uint8_t>(b < 0 ? 0 : (b > 255 ? 255 : b));
         }
     }
 
