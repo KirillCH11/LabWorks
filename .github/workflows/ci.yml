@@ -1,0 +1,42 @@
+name: BMP Image Processor CI
+
+on: [push, pull_request]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y g++ libomp-dev build-essential make
+        
+    - name: Build using Makefile
+      working-directory: ./Lab_Work_1
+      run: |
+        make
+        
+    - name: Prepare test images
+      working-directory: ./Lab_Work_1
+      run: |
+        mkdir -p test_images
+        cp Panda_small.bmp Panda_middle.bmp Panda_large.bmp test_images/
+        ls -lh test_images/
+        
+    - name: Run performance tests
+      working-directory: ./Lab_Work_1
+      run: |
+        ./bmp_processor test_images/Panda_small.bmp small_rotated.bmp small_filtered.bmp
+        ./bmp_processor test_images/Panda_middle.bmp middle_rotated.bmp middle_filtered.bmp
+        ./bmp_processor test_images/Panda_large.bmp large_rotated.bmp large_filtered.bmp
+        ls -lh *.bmp
+        
+    - name: Verify outputs
+      working-directory: ./Lab_Work_1
+      run: |
+        file small_rotated.bmp small_filtered.bmp
+        file middle_rotated.bmp middle_filtered.bmp
+        file large_rotated.bmp large_filtered.bmp
