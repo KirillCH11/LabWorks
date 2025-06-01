@@ -1,6 +1,12 @@
 name: BMP Image Processor CI
 
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - 'Lab_Work_1/**'
+  pull_request:
+    paths:
+      - 'Lab_Work_1/**'
 
 jobs:
   build-and-test:
