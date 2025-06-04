@@ -1,0 +1,40 @@
+name: BMP Image Processor CI
+
+on: [push, pull_request]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y g++ libomp-dev build-essential make
+        
+    - name: Build using Makefile
+      working-directory: ./Lab_Work_1
+      run: |
+        make
+        
+    - name: Prepare test images
+      working-directory: ./Lab_Work_1
+      run: |
+        mkdir -p test_images
+        cp Pan.bmp Pan_2.bmp test_images/
+        ls -lh test_images/
+        
+    - name: Run performance tests
+      working-directory: ./Lab_Work_1
+      run: |
+        ./bmp_processor test_images/Pan.bmp rotated_Pan.bmp filtered_Pan.bmp
+        ./bmp_processor test_images/Pan_2.bmp rotated_Pan_2.bmp filtered_Pan_2.bmp
+        ls -lh *.bmp
+        
+    - name: Verify outputs
+      working-directory: ./Lab_Work_1
+      run: |
+        file rotated_Pan.bmp filtered_Pan.bmp
+        file rotated_Pan_2.bmp filtered_Pan_2.bmp

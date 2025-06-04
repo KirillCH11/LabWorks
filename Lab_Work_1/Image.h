@@ -5,10 +5,13 @@
 #ifndef IMAGE_H
 #define IMAGE_H
 
+#include <cstdint>
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <iomanip>
+#include <omp.h>
+#include <algorithm> 
 
 #pragma pack(push,1)
 
@@ -54,6 +57,7 @@ public:
     void rotate_clockwise();
     void rotate_counter_clockwise();
     void Gauss_filter();
+    void Gauss_filter_parallel();
     
 private:
     BMP_Header file_header;
@@ -61,4 +65,4 @@ private:
     std::vector<Pixel> lst; 
 };
 
-#endif 
+#endif
