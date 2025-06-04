@@ -23,20 +23,18 @@ jobs:
       working-directory: ./Lab_Work_1
       run: |
         mkdir -p test_images
-        cp Panda_small.bmp Panda_middle.bmp Panda_large.bmp test_images/
+        cp Pan.bmp Pan_2.bmp test_images/
         ls -lh test_images/
         
     - name: Run performance tests
       working-directory: ./Lab_Work_1
       run: |
-        ./bmp_processor test_images/Panda_small.bmp small_rotated.bmp small_filtered.bmp
-        ./bmp_processor test_images/Panda_middle.bmp middle_rotated.bmp middle_filtered.bmp
-        ./bmp_processor test_images/Panda_large.bmp large_rotated.bmp large_filtered.bmp
+        ./bmp_processor test_images/Pan.bmp rotated_Pan.bmp filtered_Pan.bmp
+        ./bmp_processor test_images/Pan_2.bmp rotated_Pan_2.bmp filtered_Pan_2.bmp
         ls -lh *.bmp
         
     - name: Verify outputs
       working-directory: ./Lab_Work_1
       run: |
-        file small_rotated.bmp small_filtered.bmp
-        file middle_rotated.bmp middle_filtered.bmp
-        file large_rotated.bmp large_filtered.bmp
+        file rotated_Pan.bmp filtered_Pan.bmp
+        file rotated_Pan_2.bmp filtered_Pan_2.bmp

@@ -7,7 +7,7 @@
 #include <iostream>
 
 int main() {
-    const std::vector<std::string> test_images = {"Panda_small.bmp", "Panda_middle.bmp", "Panda_large.bmp"};
+    const std::vector<std::string> test_images = {"Pan.bmp", "Pan_2.bmp"};
     
     for (const auto& image_name : test_images) {
         std::cout << "Testing image: " << image_name << std::endl;

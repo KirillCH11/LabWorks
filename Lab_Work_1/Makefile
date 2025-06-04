@@ -7,6 +7,8 @@ SRCS := main.cpp Image.cpp
 HDRS := Image.h
 OBJS := $(SRCS:.cpp=.o)
 
+GENERATED_BMP := rotated_*.bmp filtered_*.bmp small_*.bmp middle_*.bmp large_*.bmp
+
 $(TARGET): $(OBJS)
 	$(CXX) $(LDFLAGS) -o $@ $^
 
@@ -18,9 +20,8 @@ $(TARGET): $(OBJS)
 all: $(TARGET)
 
 clean:
-	rm -f $(TARGET) $(OBJS) *.bmp
+	rm -f $(TARGET) $(OBJS) $(GENERATED_BMP)
 
 test: $(TARGET)
-	./$(TARGET) Panda_small.bmp small_rotated.bmp small_filtered.bmp
-	./$(TARGET) Panda_middle.bmp middle_rotated.bmp middle_filtered.bmp
-	./$(TARGET) Panda_large.bmp large_rotated.bmp large_filtered.bmp
+	./$(TARGET) Pan.bmp small_rotated.bmp small_filtered.bmp
+	./$(TARGET) Pan_2.bmp middle_rotated.bmp middle_filtered.bmp

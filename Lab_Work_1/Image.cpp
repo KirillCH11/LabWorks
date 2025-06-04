@@ -5,6 +5,7 @@
 #include "Image.h"
 #include <cstdint>
 #include <cmath>
+#include <stdexcept>
 
 Image_BMP::Image_BMP(const std::string& file_name) 
 {
@@ -14,40 +15,62 @@ Image_BMP::Image_BMP(const std::string& file_name)
 void Image_BMP::load(const std::string& filename) 
 {
     std::ifstream file(filename, std::ios::binary);
+
     file.read(reinterpret_cast<char*>(&file_header), sizeof(BMP_Header));
     file.read(reinterpret_cast<char*>(&info_header), sizeof(BMP_Info));
 
-    lst.resize(info_header.width * info_header.height);
+    const int padding = (4 - (info_header.width * sizeof(Pixel)) % 4) % 4;
+
+    lst.resize(info_header.width * abs(info_header.height));
     file.seekg(file_header.data_offset, std::ios::beg);
 
-    for (int y = 0; y < info_header.height; ++y) 
+    for (int y = 0; y < abs(info_header.height); ++y) 
     {
         for (int x = 0; x < info_header.width; ++x) 
         {
             Pixel pixel;
             file.read(reinterpret_cast<char*>(&pixel), sizeof(Pixel));
-            lst[(y * info_header.width) + x] = pixel;
+
+            int dst_y = info_header.height > 0 ? (info_header.height - 1 - y) : y;
+            lst[dst_y * info_header.width + x] = pixel;
         }
+        file.seekg(padding, std::ios::cur);
     }
 }
 
 void Image_BMP::save(const std::string& filename) 
 {
     std::ofstream file(filename, std::ios::binary);
-    file_header.file_size = sizeof(BMP_Header) + sizeof(BMP_Info) + lst.size() * sizeof(Pixel);
-    info_header.image_size = lst.size() * sizeof(Pixel);
+
+    const int padding = (4 - (info_header.width * sizeof(Pixel)) % 4) % 4;
+    const char padding_data[4] = {0, 0, 0, 0};
+
+    file_header.file_size = sizeof(BMP_Header) + sizeof(BMP_Info) + 
+                          (info_header.width * sizeof(Pixel) + padding) * abs(info_header.height);
+    file_header.data_offset = sizeof(BMP_Header) + sizeof(BMP_Info);
+    
+    info_header.image_size = (info_header.width * sizeof(Pixel) + padding) * abs(info_header.height);
+    info_header.height = abs(info_header.height);
 
     file.write(reinterpret_cast<const char*>(&file_header), sizeof(BMP_Header));
     file.write(reinterpret_cast<const char*>(&info_header), sizeof(BMP_Info));
-    file.write(reinterpret_cast<const char*>(lst.data()), lst.size() * sizeof(Pixel));
+
+    for (int y = info_header.height - 1; y >= 0; --y) 
+    {
+        const int row_start = y * info_header.width;
+        file.write(reinterpret_cast<const char*>(&lst[row_start]), info_header.width * sizeof(Pixel));
+        if (padding > 0) {
+            file.write(padding_data, padding);
+        }
+    }
 }
 
 void Image_BMP::rotate_clockwise() 
 {
-    std::vector<Pixel> lst_new(info_header.width * info_header.height);
-    const int new_width = info_header.height;
+    std::vector<Pixel> lst_new(abs(info_header.width * info_header.height));
+    const int new_width = abs(info_header.height);
     const int new_height = info_header.width;
-    const int height = info_header.height;
+    const int height = abs(info_header.height);
     const int width = info_header.width;
     
     #pragma omp parallel for schedule(static)
@@ -69,10 +92,10 @@ void Image_BMP::rotate_clockwise()
 
 void Image_BMP::rotate_counter_clockwise() 
 {
-    std::vector<Pixel> lst_new(info_header.width * info_header.height);
-    const int new_width = info_header.height;
+    std::vector<Pixel> lst_new(abs(info_header.width * info_header.height));
+    const int new_width = abs(info_header.height);
     const int new_height = info_header.width;
-    const int height = info_header.height;
+    const int height = abs(info_header.height);
     const int width = info_header.width;
 
     #pragma omp parallel for schedule(static)
